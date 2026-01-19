@@ -8,6 +8,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 
+import API_URL from './api'; // <--- CONEXÃO COM O BANCO DE DADOS
+
 import DatePicker, { registerLocale } from "react-datepicker";
 import ptBR from 'date-fns/locale/pt-BR';
 import "react-datepicker/dist/react-datepicker.css";
@@ -93,8 +95,10 @@ export default function AdminPanel() {
     }
   }, [navigate, usuario, tipoUsuario]);
 
+  // --- CARREGAR DADOS DO BANCO REAL ---
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/atendimentos')
+    // <--- AQUI MUDOU: Usa API_URL em vez de localhost
+    fetch(`${API_URL}/api/atendimentos`)
       .then(res => res.json())
       .then(data => {
         setListaCompleta(data);
@@ -154,7 +158,7 @@ export default function AdminPanel() {
     return Object.values(grupos);
   }, [listaFiltrada]);
 
-  // CORREÇÃO 1: CÁLCULO DA MÉDIA EM SEGUNDOS PARA ATENDENTES
+  // CÁLCULO DA MÉDIA EM SEGUNDOS PARA ATENDENTES
   const dadosPorUsuario = useMemo(() => {
     const grupos = {};
     listaFiltrada.forEach(item => {
@@ -172,7 +176,7 @@ export default function AdminPanel() {
     }));
   }, [listaFiltrada]);
 
-  // CORREÇÃO 2: CÁLCULO DA MÉDIA EM SEGUNDOS PARA ASSUNTOS
+  // CÁLCULO DA MÉDIA EM SEGUNDOS PARA ASSUNTOS
   const dadosPorAssunto = useMemo(() => {
     const grupos = {
       "1 - LIBERAÇÃO": { categoria: "1 - LIBERAÇÃO", qtd: 0, segundos: 0 },
@@ -318,7 +322,6 @@ export default function AdminPanel() {
                     <td style={{padding: 12, fontWeight:'bold', color: '#333'}}>{user.nome}</td>
                     <td style={{padding: 12}}>{user.qtd}</td>
                     <td style={{padding: 12, color: '#00995D', fontWeight:'bold'}}>{user.tempoFormatado}</td>
-                    {/* AQUI ESTÁ A CORREÇÃO NA EXIBIÇÃO: MOSTRA 00:00:30 */}
                     <td style={{padding: 12, color: '#666'}}>
                       {user.qtd > 0 ? segundosParaHora(user.mediaSegundos) : "00:00:00"}
                     </td>
@@ -350,7 +353,6 @@ export default function AdminPanel() {
                   <td style={{padding: 12, fontWeight:'bold', color: '#333'}}>{item.categoria}</td>
                   <td style={{padding: 12}}>{item.qtd}</td>
                   <td style={{padding: 12, color: '#004E4B', fontWeight:'bold'}}>{item.tempoFormatado}</td>
-                  {/* AQUI TAMBÉM: CORREÇÃO PARA FORMATO DE RELÓGIO */}
                   <td style={{padding: 12, color: '#666'}}>
                     {item.qtd > 0 ? segundosParaHora(item.mediaSegundos) : "00:00:00"}
                   </td>
