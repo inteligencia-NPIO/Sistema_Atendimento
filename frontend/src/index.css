@@ -1,0 +1,163 @@
+:root {
+  --unimed: #00995D;
+  --bg: #F4F6F9;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: #333;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.btn {
+  background: var(--unimed); color: white;
+  border: none; padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  transition: 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.input-filter {
+  width: 100%;
+  height: 42px;
+  padding: 0 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fff;
+  color: #333;
+  font-family: 'Segoe UI', sans-serif;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s;
+  cursor: pointer;
+  
+  /* COMANDO SUPREMO PARA SUMIR COM A SETA PADRÃO */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.input-filter:focus {
+  border-color: #00995D;
+  box-shadow: 0 0 0 3px rgba(0, 153, 93, 0.1);
+}
+
+/* Adiciona uma setinha customizada no Select (opcional, para ficar bonito) */
+select.input-filter {
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2300995D%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px top 50%; /* Posiciona a seta na direita */
+  background-size: 12px auto; /* Tamanho da seta */
+  cursor: pointer;
+  padding-right: 40px; 
+}
+
+@import "react-datepicker/dist/react-datepicker.css";
+
+/* 1. Garante que o container do calendário tenha prioridade visual */
+.react-datepicker-popper {
+  z-index: 9999 !important; /* Fica em cima de tudo */
+}
+
+/* 2. O Corpo do Calendário */
+.react-datepicker {
+  font-family: 'Segoe UI', sans-serif !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.2); /* Sombra mais forte */
+  background-color: #fff !important; /* FUNDO BRANCO OBRIGATÓRIO */
+}
+
+/* 3. O Cabeçalho Verde (Igual da foto) */
+.react-datepicker__header {
+  background-color: #004E4B !important; /* Verde Escuro Unimed */
+  border-bottom: none !important;
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+  padding-top: 15px !important;
+}
+
+/* 4. Textos do Cabeçalho (Mês e Dias) */
+.react-datepicker__current-month, 
+.react-datepicker-time__header, 
+.react-datepicker-year-header {
+  color: #fff !important;
+  font-weight: bold !important;
+  text-transform: capitalize;
+  font-size: 1rem;
+}
+
+.react-datepicker__day-name {
+  color: rgba(255,255,255,0.8) !important;
+  font-weight: 500;
+}
+
+/* 5. Dias do calendário */
+.react-datepicker__day {
+  color: #444;
+  width: 2rem;
+  line-height: 2rem;
+}
+
+/* 6. Dia Selecionado (Bolinha Verde) */
+.react-datepicker__day--selected, 
+.react-datepicker__day--keyboard-selected {
+  background-color: #004E4B !important; /* Verde Escuro */
+  color: white !important;
+  border-radius: 50% !important;
+  font-weight: bold;
+}
+
+/* 7. Hover (Passar o mouse) */
+.react-datepicker__day:hover {
+  background-color: #00995D !important; /* Verde Claro */
+  color: white !important;
+  border-radius: 50% !important;
+}
+
+/* 8. Setas de Navegação (As flechinhas brancas) */
+.react-datepicker__navigation-icon::before {
+  border-color: #fff !important;
+  border-width: 2px 2px 0 0 !important;
+  height: 8px !important;
+  width: 8px !important;
+  top: 12px !important;
+}
+
+.react-datepicker__navigation {
+  top: 13px !important;
+}
+
+/* 9. Input Wrapper */
+.react-datepicker-wrapper {
+  width: 100%;
+}
