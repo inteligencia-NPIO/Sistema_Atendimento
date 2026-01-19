@@ -12,6 +12,8 @@
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/backend/main.py" },
-    { "source": "/((?!api|assets|favicon.ico|logo.png).*)", "destination": "/index.html" }
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/(.*)\\.(png|jpg|jpeg|gif|ico|svg)", "destination": "/$1.$2" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
