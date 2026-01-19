@@ -64,7 +64,10 @@ class UsuarioResponse(BaseModel):
     class Config:
         orm_mode = True
 
-app = FastAPI()
+app = FastAPI(
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json"
+)
 
 app.add_middleware(
     CORSMiddleware,
