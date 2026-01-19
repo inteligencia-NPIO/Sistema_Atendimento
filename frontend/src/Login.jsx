@@ -1,117 +1,135 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, AlertCircle } from 'lucide-react'; // Importei o ícone de alerta
+import { User, Lock, LogIn } from 'lucide-react';
 import API_URL from './api';
 
 export default function Login() {
-  const [user, setUser] = useState('');
-  const [pass, setPass] = useState('');
-  const [erro, setErro] = useState(''); // Variável para controlar a mensagem de erro
   const navigate = useNavigate();
-  const usuario = localStorage.getItem('usuario');
-  const tipoUsuario = localStorage.getItem('tipo_usuario');
+  const [usuario, setUsuario] = useState('');
+  const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const isAdmin = tipoUsuario === 'gestor';
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setErro('');
+    setLoading(true);
 
-  const handleLogin = async () => {
-    setErro(''); // Limpa erro anterior ao tentar de novo
-
-    if (!user || !pass) {
-      setErro('Preencha todos os campos!');
-      return;
-    }
+    const urlCompleta = `${API_URL}/api/login`;
+    console.log("Tentando conectar em:", urlCompleta);
 
     try {
-      const response = await fetch(`${API_URL}/api/login`, {
+      const response = await fetch(urlCompleta, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: usuario, password: senha })
       });
 
-      const data = await res.json(); 
+      console.log("Status da resposta:", response.status);
 
-      if (res.ok) {
-        // Salvamos o nome E o tipo de permissão
+      // 1. Verificar se a resposta é JSON válido
+      const textoResposta = await response.text();
+      console.log("Conteúdo da resposta:", textoResposta);
+
+      let data;
+      try {
+        data = JSON.parse(textoResposta);
+      } catch (jsonError) {
+        // Se der erro aqui, é porque o Vercel devolveu HTML (Erro 404 ou 500) em vez de JSON
+        if (response.status === 404) {
+             throw new Error("Erro 404: A rota de login não foi encontrada no Backend.");
+        } else if (response.status === 500) {
+             throw new Error("Erro 500: O Backend quebrou (Verifique os Logs na Vercel).");
+        } else {
+             throw new Error(`Erro Técnico: Recebi HTML em vez de dados. Status: ${response.status}`);
+        }
+      }
+
+      // 2. Se for JSON, verificar se o login funcionou
+      if (response.ok) {
         localStorage.setItem('usuario', data.usuario);
         localStorage.setItem('tipo_usuario', data.tipo);
         
-        navigate('/app');
+        if (data.tipo === 'gestor') {
+          navigate('/admin');
+        } else {
+          navigate('/app');
+        }
       } else {
-        setErro('Usuário ou senha incorretos!');
+        setErro(data.detail || 'Usuário ou senha incorretos!');
       }
 
     } catch (error) {
-      setErro('Erro: O Sistema está desligado!');
+      console.error("Erro capturado:", error);
+      setErro(error.message || 'Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Função para permitir apertar ENTER para entrar
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleLogin();
-  };
-
   return (
-    <div style={{height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F4F6F9'}}>
-      <div className="card" style={{width: 350, textAlign: 'center', padding: '40px 30px'}}>
+    <div style={{minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5', fontFamily: 'Segoe UI, sans-serif'}}>
+      
+      <div style={{background: 'white', padding: '40px', borderRadius: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px', textAlign: 'center'}}>
+        <img src="/logo.png" alt="Unimed" style={{maxWidth: '180px', marginBottom: '20px'}} />
         
-        {/* --- 1. A LOGO AQUI --- */}
-        <img 
-          src="/logo.png" 
-          alt="Logo Unimed" 
-          style={{maxWidth: '180px', marginBottom: '20px'}} 
-        />
+        <h2 style={{color: '#00995D', margin: '0 0 10px 0'}}>Atendimento</h2>
+        <p style={{color: '#666', fontSize: '14px', marginBottom: '30px'}}>Bem-vindo. Faça login para continuar</p>
 
-        <h2 style={{color: '#00995D', margin: 0, fontSize: '24px'}}>Atendimento</h2>
-        <p style={{color: '#666', marginTop: 5, marginBottom: 30}}>Bem-vindo. Faça login para continuar</p>
-        
-        {/* --- 2. MENSAGEM DE ERRO VISUAL --- */}
+        {/* ÁREA DE MENSAGEM DE ERRO MELHORADA */}
         {erro && (
           <div style={{
-            background: '#ffebee', 
-            color: '#d32f2f', 
             padding: '10px', 
-            borderRadius: '8px', 
-            marginBottom: '20px',
-            fontSize: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            justifyContent: 'center'
+            background: '#ffebe6', 
+            color: '#bf2c24', 
+            borderRadius: '5px', 
+            marginBottom: '20px', 
+            fontSize: '13px', 
+            textAlign: 'left',
+            border: '1px solid #ffbdad'
           }}>
-            <AlertCircle size={16} /> {erro}
+            <strong>Atenção:</strong> {erro}
           </div>
         )}
 
-        <div style={{marginTop: 20}}>
-          <div style={{position: 'relative', marginBottom: 15}}>
-            <User size={20} style={{position: 'absolute', top: 12, left: 12, color: '#00995D'}}/>
+        <form onSubmit={handleLogin}>
+          <div style={{marginBottom: '15px', position: 'relative'}}>
+            <User size={20} color="#00995D" style={{position: 'absolute', left: '10px', top: '12px'}} />
             <input 
-              className="input" 
-              style={{paddingLeft: 40, height: 45}} 
-              placeholder="Usuário" 
-              value={user} 
-              onChange={e => {setUser(e.target.value); setErro('')}} 
-              onKeyDown={handleKeyDown}
+              type="text" 
+              placeholder="Usuário (ex: admin)" 
+              value={usuario}
+              onChange={(e) => setUsuario(e.target.value)}
+              style={{width: '100%', padding: '12px 12px 12px 40px', border: '1px solid #ccc', borderRadius: '5px', fontSize: '15px', boxSizing: 'border-box'}}
             />
           </div>
-          <div style={{position: 'relative'}}>
-            <Lock size={20} style={{position: 'absolute', top: 12, left: 12, color: '#00995D'}}/>
+
+          <div style={{marginBottom: '25px', position: 'relative'}}>
+            <Lock size={20} color="#00995D" style={{position: 'absolute', left: '10px', top: '12px'}} />
             <input 
-              className="input" 
-              style={{paddingLeft: 40, height: 45}} 
               type="password" 
               placeholder="Senha" 
-              value={pass} 
-              onChange={e => {setPass(e.target.value); setErro('')}} 
-              onKeyDown={handleKeyDown}
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              style={{width: '100%', padding: '12px 12px 12px 40px', border: '1px solid #ccc', borderRadius: '5px', fontSize: '15px', boxSizing: 'border-box'}}
             />
           </div>
-        </div>
 
-        <button className="btn" style={{marginTop: 30, height: 45, fontSize: 16}} onClick={handleLogin}>
-          ACESSAR SISTEMA
-        </button>
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{
+              width: '100%', padding: '12px', background: loading ? '#ccc' : '#00995D', color: 'white', 
+              border: 'none', borderRadius: '5px', fontSize: '16px', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer', 
+              transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
+            }}
+          >
+            {loading ? 'Conectando...' : <><LogIn size={20} /> ENTRAR</>}
+          </button>
+        </form>
       </div>
+      
+      <p style={{marginTop: '30px', color: '#999', fontSize: '12px'}}>Sistema de Gestão de Senhas - Versão 1.0</p>
     </div>
   );
 }
