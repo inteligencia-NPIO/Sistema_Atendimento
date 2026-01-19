@@ -4,8 +4,9 @@ import {
   ArrowLeft, FileText, Clock, Calendar, CheckCircle, 
   TrendingUp, ChevronDown, ChevronRight, Filter, Users 
 } from 'lucide-react';
+import API_URL from './api'; // <--- CONEXÃO COM O BANCO DE DADOS
 
-// --- NOVO COMPONENTE: DROPDOWN DO CABEÇALHO (Estilo Unimed) ---
+// --- COMPONENTE: DROPDOWN DO CABEÇALHO (Estilo Unimed) ---
 const HeaderDropdown = ({ value, onChange, options }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -142,9 +143,9 @@ const MesSection = ({ titulo, dados, totalHoras, isOpenDefault = false, mostrarU
               {dados.map((item, i) => (
                 <tr key={i} style={{borderBottom: '1px solid #f0f0f0'}}>
                   <td style={{padding: '12px 20px', color: '#333', fontSize: '13px', fontWeight: 'bold'}}>
-                    {item.data_registro.split(' ')[0].split('/')[0]} 
+                    {item.data_registro && item.data_registro.split(' ')[0].split('/')[0]} 
                     <span style={{color:'#999', fontWeight:'normal', fontSize:'11px', marginLeft:5}}>
-                      ({item.data_registro.split(' ')[1]}) 
+                      ({item.data_registro && item.data_registro.split(' ')[1]}) 
                     </span>
                   </td>
                   
@@ -184,12 +185,13 @@ export default function UserPerformance() {
   const [usuariosDisponiveis, setUsuariosDisponiveis] = useState([]);
   const [filtroUsuario, setFiltroUsuario] = useState(isAdmin ? 'TODOS' : usuarioLogado);
 
-  // --- CARREGAR DADOS ---
+  // --- CARREGAR DADOS (AGORA DO BANCO REAL) ---
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/atendimentos')
+    // <--- AQUI MUDOU: Usa API_URL em vez de localhost
+    fetch(`${API_URL}/api/atendimentos`)
       .then(res => res.json())
       .then(data => {
-        // Ordenação Cronológica
+        // Ordenação Cronológica (Mantida igualzinha)
         data.sort((a, b) => {
           if (!a.data_registro || !b.data_registro) return 0;
           const [diaA, mesA, anoA] = a.data_registro.split(' ')[0].split('/');
@@ -202,7 +204,7 @@ export default function UserPerformance() {
           return dataA - dataB;
         });
 
-        // Extrair usuários
+        // Extrair usuários para o filtro
         const usersUnicos = [...new Set(data.map(item => item.usuario))];
         setUsuariosDisponiveis(usersUnicos);
 
@@ -211,7 +213,7 @@ export default function UserPerformance() {
       .catch(err => console.error("Erro ao buscar dados"));
   }, []);
 
-  // --- APLICAR FILTRO ---
+  // --- APLICAR FILTRO (Mantido igual) ---
   useEffect(() => {
     if (listaCompleta.length === 0) return;
 
@@ -230,7 +232,7 @@ export default function UserPerformance() {
   }, [listaCompleta, filtroUsuario, isAdmin, usuarioLogado]);
 
 
-  // --- CÁLCULOS ---
+  // --- CÁLCULOS (Mantido igual) ---
   const tempoParaSegundos = (t) => {
     if (!t) return 0;
     const [h, m, s] = t.split(':').map(Number);
@@ -251,7 +253,7 @@ export default function UserPerformance() {
 
   const tempoTotalGeral = useMemo(() => calcularTotalLista(listaFiltrada), [listaFiltrada]);
 
-  // --- AGRUPAMENTO ---
+  // --- AGRUPAMENTO (Mantido igual) ---
   const dadosAgrupados = useMemo(() => {
     const grupos = {};
     listaFiltrada.forEach(item => {
@@ -294,7 +296,7 @@ export default function UserPerformance() {
             </p>
           </div>
 
-          {/* --- AQUI ESTÁ O NOVO DROPDOWN CUSTOMIZADO --- */}
+          {/* --- DROPDOWN CUSTOMIZADO --- */}
           {isAdmin && (
             <div style={{marginTop: 5}}>
                <HeaderDropdown 
@@ -304,7 +306,6 @@ export default function UserPerformance() {
                />
             </div>
           )}
-          {/* ------------------------------------------- */}
         </div>
 
         <button onClick={() => navigate('/app')} style={{background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 'bold', backdropFilter: 'blur(5px)'}}>
