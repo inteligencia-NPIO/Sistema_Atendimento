@@ -21,6 +21,13 @@ export default function Dashboard() {
   
   const usuario = localStorage.getItem('usuario');
   const tipoUsuario = localStorage.getItem('tipo_usuario');
+
+  // Se não tiver usuário salvo, manda pro login na hora!
+  useEffect(() => {
+    if (!usuario) {
+      navigate('/');
+    }
+  }, [usuario, navigate]);
   
   // Verifica se o cargo é 'gestor'
   const isAdmin = tipoUsuario === 'gestor';
@@ -130,6 +137,8 @@ export default function Dashboard() {
     display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', borderRadius: '5px',
     transition: '0.2s', background: 'rgba(255,255,255,0.1)'
   };
+
+  if (!usuario) return null;
 
   return (
     <div style={{minHeight: '100vh', background: '#F4F6F9', fontFamily: 'Segoe UI, sans-serif'}}>
