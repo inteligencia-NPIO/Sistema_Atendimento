@@ -9,38 +9,26 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
-# ==========================================
-# 1. CONFIGURAÇÃO DO BANCO DE DADOS
-# ==========================================
-
-# Pega a URL do banco das variáveis de ambiente da Vercel
+# ... (MANTENHA A PARTE DE CONFIGURAÇÃO DO BANCO IGUAL AO ANTERIOR) ...
 DATABASE_URL = os.getenv("POSTGRES_URL")
-
-# Correção necessária: A Vercel entrega "postgres://", mas o SQLAlchemy quer "postgresql://"
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# Se não tiver URL (rodando no seu PC sem docker), cria um arquivo local
 if not DATABASE_URL:
     DATABASE_URL = "sqlite:///./banco_local.db"
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
-    # Configuração para Postgres (Vercel)
     engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# ==========================================
-# 2. MODELOS (TABELAS DO BANCO)
-# ==========================================
-
+# ... (MANTENHA AS CLASSES UsuarioDB, AtendimentoDB E CRIAÇÃO DE TABELAS IGUAIS) ...
 class UsuarioDB(Base):
     __tablename__ = "usuarios"
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, unique=True, index=True)
     senha = Column(String)
-    funcao = Column(String)  # 'gestor' ou 'funcionario'
+    funcao = Column(String)
 
 class AtendimentoDB(Base):
     __tablename__ = "atendimentos"
@@ -51,13 +39,9 @@ class AtendimentoDB(Base):
     usuario = Column(String)
     data_registro = Column(String)
 
-# Cria as tabelas se elas não existirem
 Base.metadata.create_all(bind=engine)
 
-# ==========================================
-# 3. SCHEMAS (PYDANTIC - VALIDAÇÃO DE DADOS)
-# ==========================================
-
+# ... (MANTENHA OS SCHEMAS LoginData, ETC IGUAIS) ...
 class LoginData(BaseModel):
     username: str
     password: str
@@ -80,10 +64,6 @@ class UsuarioResponse(BaseModel):
     class Config:
         orm_mode = True
 
-# ==========================================
-# 4. APP E DEPENDÊNCIAS
-# ==========================================
-
 app = FastAPI()
 
 app.add_middleware(
@@ -94,7 +74,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Função para pegar a conexão com o banco a cada requisição
 def get_db():
     db = SessionLocal()
     try:
@@ -103,82 +82,65 @@ def get_db():
         db.close()
 
 # ==========================================
-# 5. ROTAS
+# 5. ROTAS (AQUI ESTÁ A MUDANÇA: ADICIONEI /api EM TUDO)
 # ==========================================
 
-# --- ROTA ESPECIAL: CRIAR O PRIMEIRO ADMIN (Seed) ---
 @app.get("/api/criar-admin-inicial")
 def criar_admin_inicial(db: Session = Depends(get_db)):
-    # Verifica se já existe alguém com nome 'admin'
     usuario = db.query(UsuarioDB).filter(UsuarioDB.nome == "admin").first()
     if usuario:
         return {"mensagem": "O usuário 'admin' já existe!"}
-    
     novo_admin = UsuarioDB(nome="admin", senha="123", funcao="gestor")
     db.add(novo_admin)
     db.commit()
     return {"mensagem": "Sucesso! Usuário 'admin' criado com senha '123'."}
 
-# --- LOGIN ---
-@app.post("/login")
+# --- LOGIN (Adicionado /api) ---
+@app.post("/api/login") 
 def login(data: LoginData, db: Session = Depends(get_db)):
-    # Busca o usuário no banco
     usuario = db.query(UsuarioDB).filter(UsuarioDB.nome == data.username).first()
-    
     if not usuario:
         raise HTTPException(status_code=401, detail="Usuário não encontrado")
-    
     if usuario.senha != data.password:
-        raise HTTPException(status_code=401, detail="Senha incorreta")
-        
-    return {
-        "status": "ok", 
-        "usuario": usuario.nome, 
-        "tipo": usuario.funcao 
-    }
+        raise HTTPException(status_code=401, detail="Senha incorreta") 
+    return { "status": "ok", "usuario": usuario.nome, "tipo": usuario.funcao }
 
-# --- ATENDIMENTOS ---
-@app.get("/atendimentos")
+# --- ATENDIMENTOS (Adicionado /api) ---
+@app.get("/api/atendimentos")
 def ler_atendimentos(db: Session = Depends(get_db)):
     return db.query(AtendimentoDB).all()
 
-@app.post("/atendimentos")
+@app.post("/api/atendimentos")
 def criar_atendimento(item: AtendimentoCreate, db: Session = Depends(get_db)):
     novo_atendimento = AtendimentoDB(
-        descricao=item.descricao,
-        categoria=item.categoria,
-        tempo=item.tempo,
-        usuario=item.usuario,
-        data_registro=datetime.now().strftime("%d/%m/%Y %H:%M")
+        descricao=item.descricao, categoria=item.categoria, tempo=item.tempo,
+        usuario=item.usuario, data_registro=datetime.now().strftime("%d/%m/%Y %H:%M")
     )
     db.add(novo_atendimento)
     db.commit()
     db.refresh(novo_atendimento)
     return {"msg": "Salvo", "id": novo_atendimento.id}
 
-# --- USUÁRIOS (GESTÃO) ---
-@app.get("/usuarios", response_model=List[UsuarioResponse])
+# --- USUÁRIOS (Adicionado /api) ---
+@app.get("/api/usuarios", response_model=List[UsuarioResponse])
 def listar_usuarios(db: Session = Depends(get_db)):
     return db.query(UsuarioDB).all()
 
-@app.post("/usuarios")
+@app.post("/api/usuarios")
 def criar_usuario(item: UsuarioCreate, db: Session = Depends(get_db)):
-    # Verifica duplicidade
     existente = db.query(UsuarioDB).filter(UsuarioDB.nome == item.nome).first()
     if existente:
         raise HTTPException(status_code=400, detail="Usuário já existe")
-    
     novo_user = UsuarioDB(nome=item.nome, senha=item.senha, funcao=item.funcao)
     db.add(novo_user)
     db.commit()
     return {"msg": "Usuário criado"}
 
-@app.delete("/usuarios/{user_id}")
+@app.delete("/api/usuarios/{user_id}")
 def deletar_usuario(user_id: int, db: Session = Depends(get_db)):
     user = db.query(UsuarioDB).filter(UsuarioDB.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    
     db.delete(user)
     db.commit()
     return {"msg": "Deletado"}
