@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import pytz  # <--- BIBLIOTECA DE FUSO HORÁRIO
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Depends
@@ -9,10 +10,15 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
-# ... (MANTENHA A PARTE DE CONFIGURAÇÃO DO BANCO IGUAL AO ANTERIOR) ...
+# ==========================================
+# 1. CONFIGURAÇÃO DO BANCO DE DADOS
+# ==========================================
+
 DATABASE_URL = os.getenv("POSTGRES_URL")
+
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if not DATABASE_URL:
     DATABASE_URL = "sqlite:///./banco_local.db"
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -22,7 +28,18 @@ else:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# ... (MANTENHA AS CLASSES UsuarioDB, AtendimentoDB E CRIAÇÃO DE TABELAS IGUAIS) ...
+# ==========================================
+# 2. FUNÇÃO PARA PEGAR HORA DO BRASIL 🇧🇷
+# ==========================================
+def agora_brasil():
+    fuso = pytz.timezone('America/Sao_Paulo')
+    data_hora = datetime.now(fuso)
+    return data_hora.strftime("%d/%m/%Y %H:%M")
+
+# ==========================================
+# 3. MODELOS (TABELAS)
+# ==========================================
+
 class UsuarioDB(Base):
     __tablename__ = "usuarios"
     id = Column(Integer, primary_key=True, index=True)
@@ -41,7 +58,10 @@ class AtendimentoDB(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# ... (MANTENHA OS SCHEMAS LoginData, ETC IGUAIS) ...
+# ==========================================
+# 4. SCHEMAS (PYDANTIC)
+# ==========================================
+
 class LoginData(BaseModel):
     username: str
     password: str
@@ -64,6 +84,10 @@ class UsuarioResponse(BaseModel):
     class Config:
         orm_mode = True
 
+# ==========================================
+# 5. APP E ROTAS
+# ==========================================
+
 app = FastAPI(
     docs_url="/api/docs",
     openapi_url="/api/openapi.json"
@@ -84,22 +108,20 @@ def get_db():
     finally:
         db.close()
 
-# ==========================================
-# 5. ROTAS (AQUI ESTÁ A MUDANÇA: ADICIONEI /api EM TUDO)
-# ==========================================
-
+# --- ROTA SEED ---
 @app.get("/api/criar-admin-inicial")
 def criar_admin_inicial(db: Session = Depends(get_db)):
     usuario = db.query(UsuarioDB).filter(UsuarioDB.nome == "admin").first()
     if usuario:
         return {"mensagem": "O usuário 'admin' já existe!"}
+    
     novo_admin = UsuarioDB(nome="admin", senha="123", funcao="gestor")
     db.add(novo_admin)
     db.commit()
     return {"mensagem": "Sucesso! Usuário 'admin' criado com senha '123'."}
 
-# --- LOGIN (Adicionado /api) ---
-@app.post("/api/login") 
+# --- LOGIN ---
+@app.post("/api/login")
 def login(data: LoginData, db: Session = Depends(get_db)):
     usuario = db.query(UsuarioDB).filter(UsuarioDB.nome == data.username).first()
     if not usuario:
@@ -108,7 +130,7 @@ def login(data: LoginData, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Senha incorreta") 
     return { "status": "ok", "usuario": usuario.nome, "tipo": usuario.funcao }
 
-# --- ATENDIMENTOS (Adicionado /api) ---
+# --- ATENDIMENTOS ---
 @app.get("/api/atendimentos")
 def ler_atendimentos(db: Session = Depends(get_db)):
     return db.query(AtendimentoDB).all()
@@ -116,15 +138,18 @@ def ler_atendimentos(db: Session = Depends(get_db)):
 @app.post("/api/atendimentos")
 def criar_atendimento(item: AtendimentoCreate, db: Session = Depends(get_db)):
     novo_atendimento = AtendimentoDB(
-        descricao=item.descricao, categoria=item.categoria, tempo=item.tempo,
-        usuario=item.usuario, data_registro=datetime.now().strftime("%d/%m/%Y %H:%M")
+        descricao=item.descricao,
+        categoria=item.categoria,
+        tempo=item.tempo,
+        usuario=item.usuario,
+        data_registro=agora_brasil()  # <--- AQUI USA A HORA CERTA
     )
     db.add(novo_atendimento)
     db.commit()
     db.refresh(novo_atendimento)
     return {"msg": "Salvo", "id": novo_atendimento.id}
 
-# --- USUÁRIOS (Adicionado /api) ---
+# --- USUÁRIOS ---
 @app.get("/api/usuarios", response_model=List[UsuarioResponse])
 def listar_usuarios(db: Session = Depends(get_db)):
     return db.query(UsuarioDB).all()
@@ -134,6 +159,7 @@ def criar_usuario(item: UsuarioCreate, db: Session = Depends(get_db)):
     existente = db.query(UsuarioDB).filter(UsuarioDB.nome == item.nome).first()
     if existente:
         raise HTTPException(status_code=400, detail="Usuário já existe")
+    
     novo_user = UsuarioDB(nome=item.nome, senha=item.senha, funcao=item.funcao)
     db.add(novo_user)
     db.commit()
