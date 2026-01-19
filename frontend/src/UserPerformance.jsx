@@ -319,7 +319,7 @@ export default function UserPerformance() {
         <div style={{display: 'flex', gap: '20px', marginBottom: '30px'}}>
           <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '25px', background: 'white', borderRadius: 12, boxShadow: '0 4px 15px rgba(0,0,0,0.05)'}}>
             <div style={{background: '#e6fff3', padding: '15px', borderRadius: '12px'}}> <FileText size={32} color="#00995D" /> </div>
-            <div> <small style={{color: '#666', fontWeight: 'bold'}}>TOTAL FILTRADO</small> <div style={{fontSize: '28px', fontWeight: 'bold', color: '#333'}}>{listaFiltrada.length}</div> </div>
+            <div> <small style={{color: '#666', fontWeight: 'bold'}}>TOTAL ATENDIMENTO</small> <div style={{fontSize: '28px', fontWeight: 'bold', color: '#333'}}>{listaFiltrada.length}</div> </div>
           </div>
 
           <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '25px', background: 'white', borderRadius: 12, boxShadow: '0 4px 15px rgba(0,0,0,0.05)'}}>
@@ -355,4 +355,5 @@ export default function UserPerformance() {
       </div>
     </div>
   );
+
 }
