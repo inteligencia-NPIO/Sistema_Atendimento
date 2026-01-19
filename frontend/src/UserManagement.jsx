@@ -4,6 +4,7 @@ import {
   LayoutDashboard, ListChecks, LogOut, Users, UserPlus, 
   Trash2, ShieldCheck, User, ChevronDown, Eye, EyeOff 
 } from 'lucide-react';
+import API_URL from './api'; // <--- IMPORTANTE: Conexão com o Backend
 
 // --- COMPONENTE DROPDOWN CUSTOMIZADO ---
 const CustomDropdown = ({ value, onChange }) => {
@@ -75,68 +76,93 @@ export default function UserManagement() {
   const usuarioLogado = localStorage.getItem('usuario');
   const tipoUsuario = localStorage.getItem('tipo_usuario');
 
+  // Estados do Formulário
   const [nome, setNome] = useState('');
-  
-  // --- SENHA E CONFIRMAÇÃO ---
   const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState(''); // Novo Estado
-  
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false); // Novo Olhinho
-  
+  const [confirmarSenha, setConfirmarSenha] = useState('');
   const [funcao, setFuncao] = useState('funcionario');
+  
+  // Estados de Visualização (Olhinho)
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
+
+  // Estados de Dados e UI
   const [listaUsuarios, setListaUsuarios] = useState([]);
   const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
+  // Carrega usuários ao iniciar
   useEffect(() => {
+    // Proteção de Rota: Só gestor acessa
     if (!usuarioLogado || tipoUsuario !== 'gestor') {
       alert("Acesso restrito a Gestores.");
       navigate('/app');
+      return;
     }
     carregarUsuarios();
   }, [navigate, usuarioLogado, tipoUsuario]);
 
   const carregarUsuarios = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/usuarios');
+      // <--- CONECTADO NO BANCO REAL AGORA
+      const res = await fetch(`${API_URL}/api/usuarios`);
       if (res.ok) {
         const data = await res.json();
         setListaUsuarios(data);
       }
-    } catch (error) { console.error("Erro ao carregar"); }
+    } catch (error) { 
+      console.error("Erro ao carregar usuários:", error); 
+    }
   };
 
   const handleSalvar = async () => {
-    // 1. Validação básica
+    // Validações
     if (!nome || !senha || !confirmarSenha) return setMsg("Preencha todos os campos!");
-    
-    // 2. Validação da Confirmação
-    if (senha !== confirmarSenha) {
-        return setMsg("As senhas não conferem!");
-    }
+    if (senha !== confirmarSenha) return setMsg("As senhas não conferem!");
 
+    setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/usuarios', {
+      // <--- ENVIA PARA O BANCO REAL
+      const res = await fetch(`${API_URL}/api/usuarios`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome, senha, funcao })
       });
+
       if (res.ok) {
         setMsg("Usuário cadastrado com sucesso!");
-        // Limpa tudo
+        // Limpa formulário
         setNome(''); 
         setSenha(''); 
         setConfirmarSenha('');
-        carregarUsuarios();
+        setFuncao('funcionario');
+        carregarUsuarios(); // Atualiza a lista na hora
         setTimeout(() => setMsg(''), 3000);
-      } else { setMsg("Erro: Usuário já existe?"); }
-    } catch (error) { setMsg("Erro de conexão."); }
+      } else { 
+        const erroData = await res.json();
+        setMsg(`Erro: ${erroData.detail || 'Falha ao criar usuário'}`); 
+      }
+    } catch (error) { 
+      setMsg("Erro de conexão com o servidor."); 
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExcluir = async (id) => {
-    if(!window.confirm("Excluir usuário?")) return;
-    await fetch(`http://127.0.0.1:8000/usuarios/${id}`, { method: 'DELETE' });
-    carregarUsuarios();
+    if(!window.confirm("Tem certeza que deseja excluir este usuário?")) return;
+    
+    try {
+      // <--- DELETA DO BANCO REAL
+      const res = await fetch(`${API_URL}/api/usuarios/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        carregarUsuarios();
+      } else {
+        alert("Erro ao excluir usuário.");
+      }
+    } catch (error) {
+      alert("Erro de conexão.");
+    }
   };
 
   const linkStyle = { color: 'white', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', borderRadius: '5px', transition: '0.2s', background: 'rgba(255,255,255,0.1)' };
@@ -156,7 +182,7 @@ export default function UserManagement() {
           </nav>
           <div style={{width:1, height:30, background:'rgba(255,255,255,0.3)'}}></div>
           <img src="/logo.png" style={{maxWidth:180, maxHeight:60}} alt="Logo" />
-          <button onClick={() => navigate('/')} style={{background:'transparent', border:'1px solid rgba(255,255,255,0.5)', padding:8, borderRadius:8, color:'white', cursor:'pointer'}}><LogOut size={16}/></button>
+          <button onClick={() => navigate('/')} style={{background:'transparent', border:'1px solid rgba(255,255,255,0.5)', padding:8, borderRadius:8, color:'white', cursor:'pointer'}} title="Sair"><LogOut size={16}/></button>
         </div>
       </div>
 
@@ -169,11 +195,11 @@ export default function UserManagement() {
           {msg && <div style={{padding: 10, background: msg.includes('sucesso') ? '#e6fff3' : '#FFEBEE', color: msg.includes('sucesso') ? '#00995D' : '#D32F2F', borderRadius: 6, marginBottom: 15, fontSize: 13, border: '1px solid', borderColor: msg.includes('sucesso') ? '#bcebc9' : '#FFCDD2'}}>{msg}</div>}
           
           <div style={{marginBottom: 15}}>
-            <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block', marginBottom: 5}}>NOME</label>
-            <input className={inputClass} value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: NOME" />
+            <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block', marginBottom: 5}}>NOME DE USUÁRIO</label>
+            <input className={inputClass} value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: gustavo.silva" />
           </div>
           
-          {/* CAMPO SENHA PRINCIPAL */}
+          {/* SENHA */}
           <div style={{marginBottom: 15}}>
             <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block', marginBottom: 5}}>SENHA</label>
             <div style={{position: 'relative', display: 'flex', alignItems: 'center'}}>
@@ -185,13 +211,13 @@ export default function UserManagement() {
                 placeholder="••••••"
                 style={{width: '100%', paddingRight: '40px'}} 
               />
-              <button onClick={() => setMostrarSenha(!mostrarSenha)} style={{position: 'absolute', right: '10px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', display: 'flex', alignItems: 'center'}}>
+              <button onClick={() => setMostrarSenha(!mostrarSenha)} type="button" style={{position: 'absolute', right: '10px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', display: 'flex', alignItems: 'center'}}>
                 {mostrarSenha ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          {/* --- NOVO CAMPO: CONFIRMAR SENHA --- */}
+          {/* CONFIRMAR SENHA */}
           <div style={{marginBottom: 15}}>
             <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block', marginBottom: 5}}>CONFIRMAR SENHA</label>
             <div style={{position: 'relative', display: 'flex', alignItems: 'center'}}>
@@ -203,19 +229,20 @@ export default function UserManagement() {
                 placeholder="Repita a senha"
                 style={{width: '100%', paddingRight: '40px'}} 
               />
-              <button onClick={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)} style={{position: 'absolute', right: '10px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', display: 'flex', alignItems: 'center'}}>
+              <button onClick={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)} type="button" style={{position: 'absolute', right: '10px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#666', display: 'flex', alignItems: 'center'}}>
                 {mostrarConfirmarSenha ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
-          {/* ----------------------------------- */}
           
           <div style={{marginBottom: 25}}>
             <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block', marginBottom: 5}}>FUNÇÃO (PERMISSÃO)</label>
             <CustomDropdown value={funcao} onChange={setFuncao} />
           </div>
           
-          <button onClick={handleSalvar} className="btn" style={{background: '#004E4B', color: 'white', width: '100%', padding: 12, borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', justifyContent: 'center', gap: 8}}><UserPlus size={18}/> CADASTRAR</button>
+          <button onClick={handleSalvar} disabled={loading} className="btn" style={{background: loading ? '#ccc' : '#004E4B', color: 'white', width: '100%', padding: 12, borderRadius: 8, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 'bold', display: 'flex', justifyContent: 'center', gap: 8}}>
+            {loading ? 'SALVANDO...' : <><UserPlus size={18}/> CADASTRAR</>}
+          </button>
         </div>
 
         {/* LISTA DE USUÁRIOS */}
@@ -237,10 +264,13 @@ export default function UserManagement() {
                       {u.funcao}
                     </span>
                   </td>
-                  <td style={{padding: 12, textAlign: 'right'}}><button onClick={() => handleExcluir(u.id)} style={{background: 'transparent', border: 'none', cursor: 'pointer'}} title="Excluir"><Trash2 size={18} color="#d32f2f"/></button></td>
+                  <td style={{padding: 12, textAlign: 'right'}}>
+                    {/* Impede que o admin se exclua ou exclua o admin principal se quiser colocar essa regra depois */}
+                    <button onClick={() => handleExcluir(u.id)} style={{background: 'transparent', border: 'none', cursor: 'pointer'}} title="Excluir"><Trash2 size={18} color="#d32f2f"/></button>
+                  </td>
                 </tr>
               ))}
-              {listaUsuarios.length === 0 && <tr><td colSpan="3" style={{padding:30, textAlign:'center', color:'#999'}}>Nenhum usuário encontrado.</td></tr>}
+              {listaUsuarios.length === 0 && <tr><td colSpan="3" style={{padding:30, textAlign:'center', color:'#999'}}>Nenhum usuário encontrado (além de você).</td></tr>}
             </tbody>
           </table>
         </div>
