@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Square, Save, Clock, CheckCircle, LogOut, Calendar, FileText, Timer, Headset, AlertCircle, XCircle, ChevronLeft, ChevronRight, LayoutDashboard, ListChecks, BarChart2, Users } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import API_URL from './api';
 
 export default function Dashboard() {
   const [timer, setTimer] = useState(0);
@@ -32,26 +33,32 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  // --- CARREGAR DADOS (AGORA COM FILTRO DE DATA E USUÁRIO) ---
-  useEffect(() => { carregarDados(); }, [usuario]); // Adicionei 'usuario' na dependência
+  // --- CARREGAR DADOS DO BANCO ---
+  useEffect(() => { carregarDados(); }, [usuario]);
 
   const carregarDados = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/atendimentos');
-      const todosDados = await res.json();
-      
-      // 1. PEGA A DATA DE HOJE FORMATADA
-      const hoje = new Date().toLocaleDateString('pt-BR');
+      // <--- BUSCA DO BANCO REAL
+      const res = await fetch(`${API_URL}/api/atendimentos`);
+      if (res.ok) {
+        const todosDados = await res.json();
+        
+        // 1. PEGA A DATA DE HOJE FORMATADA (dd/mm/aaaa)
+        const hoje = new Date().toLocaleDateString('pt-BR');
 
-      // 2. FILTRA: DATA DE HOJE + USUÁRIO LOGADO
-      const dadosFiltrados = todosDados.filter(item => 
-        item.data_registro && 
-        item.data_registro.startsWith(hoje) && 
-        item.usuario === usuario // <--- AQUI ESTÁ A CORREÇÃO DE PRIVACIDADE
-      );
+        // 2. FILTRA: DATA DE HOJE + USUÁRIO LOGADO
+        // O Backend salva como "dd/mm/aaaa HH:MM"
+        const dadosFiltrados = todosDados.filter(item => 
+          item.data_registro && 
+          item.data_registro.startsWith(hoje) && 
+          item.usuario === usuario 
+        );
 
-      setLista(dadosFiltrados); 
-    } catch {}
+        setLista(dadosFiltrados); 
+      }
+    } catch (error) {
+      console.error("Erro ao carregar atendimentos:", error);
+    }
   };
 
   // --- FORMATADORES E CÁLCULOS ---
@@ -60,33 +67,48 @@ export default function Dashboard() {
   const calcularTempoTotal = () => {
     let totalSegundos = 0;
     lista.forEach(item => {
-      const [h, m, s] = item.tempo.split(':').map(Number);
-      totalSegundos += (h * 3600) + (m * 60) + s;
+      // O banco pode retornar null se for antigo, garante que string existe
+      if (item.tempo) {
+        const [h, m, s] = item.tempo.split(':').map(Number);
+        totalSegundos += (h * 3600) + (m * 60) + s;
+      }
     });
     return formatTime(totalSegundos);
   };
 
-  // --- AÇÃO DE SALVAR ---
+  // --- AÇÃO DE SALVAR NO BANCO ---
   const salvar = async () => {
     if (!desc.trim()) { 
       setErro("Preencha a descrição para finalizar!"); 
       return; 
     }
 
-    const novo = { descricao: desc, categoria: cat, tempo: formatTime(timer), usuario: usuario };
+    const tempoFormatado = formatTime(timer);
+
+    const novo = { 
+      descricao: desc, 
+      categoria: cat, 
+      tempo: tempoFormatado, 
+      usuario: usuario 
+    };
     
     try {
-      await fetch('http://127.0.0.1:8000/atendimentos', {
+      // <--- ENVIA PARA O BANCO REAL
+      const res = await fetch(`${API_URL}/api/atendimentos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(novo),
       });
 
-      setTimer(0); setDesc(''); setShowForm(false); setErro('');
-      carregarDados();
-      setPaginaAtual(1);
+      if (res.ok) {
+        setTimer(0); setDesc(''); setShowForm(false); setErro('');
+        carregarDados(); // Recarrega a lista do banco
+        setPaginaAtual(1);
+      } else {
+        setErro("Erro ao salvar. Verifique sua conexão.");
+      }
     } catch (e) {
-      setErro("Erro ao salvar no sistema. Tente novamente.");
+      setErro("Erro técnico ao conectar com o servidor.");
     }
   };
 
@@ -95,6 +117,7 @@ export default function Dashboard() {
   };
 
   // --- LÓGICA DE PAGINAÇÃO ---
+  // Slice().reverse() cria uma cópia invertida para mostrar o mais recente primeiro
   const listaInvertida = lista.slice().reverse();
   const indexUltimo = paginaAtual * itensPorPagina;
   const indexPrimeiro = indexUltimo - itensPorPagina;
@@ -112,7 +135,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{minHeight: '100vh', background: '#F4F6F9'}}>
+    <div style={{minHeight: '100vh', background: '#F4F6F9', fontFamily: 'Segoe UI, sans-serif'}}>
       
       {/* HEADER */}
       <div style={{
@@ -158,12 +181,16 @@ export default function Dashboard() {
 
           <img 
             src="/logo.png" 
-            alt="Logo Unimed" 
+            alt="Logo" 
             style={{maxWidth: '180px', maxHeight: '60px', objectFit: 'contain'}} 
           />
           
           <button 
-            onClick={() => navigate('/')} 
+            onClick={() => {
+              localStorage.removeItem('usuario');
+              localStorage.removeItem('tipo_usuario');
+              navigate('/');
+            }} 
             style={{
               background: 'transparent', 
               border: '1px solid rgba(255,255,255,0.5)', 
@@ -187,7 +214,7 @@ export default function Dashboard() {
         
         {/* CARDS DE MÉTRICAS */}
         <div style={{display: 'flex', gap: '20px', marginBottom: '30px', flexWrap: 'wrap'}}>
-          <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px'}}>
+          <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', background: 'white', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)'}}>
             <div style={{background: '#f9ffe7', padding: '12px', borderRadius: '10px'}}>
               <Calendar size={28} color="#b1d14b" />
             </div>
@@ -197,7 +224,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px'}}>
+          <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', background: 'white', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)'}}>
             <div style={{background: '#e6fff3', padding: '12px', borderRadius: '10px'}}>
               <FileText size={28} color="#00995d" />
             </div>
@@ -207,7 +234,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px'}}>
+          <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', background: 'white', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)'}}>
             <div style={{background: '#e8fffe', padding: '12px', borderRadius: '10px'}}>
               <Timer size={28} color="#004e4b" />
             </div>
@@ -222,14 +249,14 @@ export default function Dashboard() {
         <div style={{display: 'flex', gap: '30px', alignItems: 'flex-start'}}>
           
           {/* Esquerda: Cronômetro */}
-          <div className="card" style={{flex: 1, textAlign: 'center', position: 'sticky', top: '20px'}}>
+          <div className="card" style={{flex: 1, textAlign: 'center', position: 'sticky', top: '20px', background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)'}}>
             
-            <h3 style={{color: '#444', display:'flex', alignItems:'center', gap:10, justifyContent:'center'}}>
+            <h3 style={{color: '#444', display:'flex', alignItems:'center', gap:10, justifyContent:'center', marginTop: 0}}>
               <Headset size={24} color="#00995D"/> Novo Registro
             </h3>
             
-            <div style={{background: '#F9FAFB', padding: '20px', borderRadius: '12px', margin: '20px 0'}}>
-               <div style={{fontSize: '54px', fontWeight: 'bold', color: '#222'}}>
+            <div style={{background: '#F9FAFB', padding: '20px', borderRadius: '12px', margin: '20px 0', border: '1px solid #eee'}}>
+               <div style={{fontSize: '54px', fontWeight: 'bold', color: '#222', fontFamily: 'monospace'}}>
                  {formatTime(timer)}
                </div>
             </div>
@@ -243,10 +270,11 @@ export default function Dashboard() {
                   style={{
                     background: isRunning ? '#cccccc' : '#00995D',
                     cursor: isRunning ? 'not-allowed' : 'pointer',
-                    color: isRunning ? '#888' : 'white'
+                    color: isRunning ? '#888' : 'white',
+                    flex: 1, padding: 12, border: 'none', borderRadius: 8, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}
                 >
-                  <Play size={18} style={{marginBottom:-4, marginRight:5}}/> INICIAR
+                  <Play size={18} style={{marginRight:5}}/> INICIAR
                 </button>
 
                 <button 
@@ -256,14 +284,15 @@ export default function Dashboard() {
                   style={{
                     background: !isRunning ? '#cccccc' : '#d32f2f',
                     cursor: !isRunning ? 'not-allowed' : 'pointer',
-                    color: !isRunning ? '#888' : 'white'
+                    color: !isRunning ? '#888' : 'white',
+                    flex: 1, padding: 12, border: 'none', borderRadius: 8, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}
                 >
-                  <Square size={18} style={{marginBottom:-4, marginRight:5}}/> PARAR
+                  <Square size={18} style={{marginRight:5}}/> PARAR
                 </button>
               </div>
             ) : (
-              <div style={{textAlign: 'left', animation: 'fadeIn 0.5s'}}>
+              <div style={{textAlign: 'left', animation: 'fadeIn 0.3s'}}>
                 
                 {erro && (
                   <div style={{
@@ -276,29 +305,29 @@ export default function Dashboard() {
                 )}
 
                 <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block'}}>CATEGORIA</label>
-                <select className="input" value={cat} onChange={e => setCat(e.target.value)}>
+                <select className="input-filter" value={cat} onChange={e => setCat(e.target.value)} style={{width: '100%', padding: 10, borderRadius: 6, border: '1px solid #ddd', marginBottom: 15}}>
                   <option>1 - LIBERAÇÃO</option>
                   <option>2 - BOLETO</option>
                   <option>3 - OUTROS SETORES</option>
                   <option>4 - I.R.</option>
                 </select>
 
-                <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', marginTop: 15, display: 'block'}}>DESCRIÇÃO</label>
+                <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block'}}>DESCRIÇÃO</label>
                 <input 
-                  className="input" 
+                  className="input-filter" 
                   autoFocus 
                   placeholder="Ex: Liberação de exame..." 
                   value={desc} 
                   onChange={e => {setDesc(e.target.value); setErro('')}} 
-                  style={{borderColor: erro ? '#D32F2F' : '#ddd'}} 
+                  style={{borderColor: erro ? '#D32F2F' : '#ddd', width: '100%', padding: 10, borderRadius: 6, border: '1px solid #ddd', boxSizing: 'border-box'}} 
                 />
 
-                <div style={{display: 'flex', gap: '10px', marginTop: 15}}>
-                  <button className="btn" onClick={salvar} style={{background: '#004E4B', flex: 1}}>
-                    <Save size={18} style={{marginBottom:-4, marginRight: 5}}/> SALVAR
+                <div style={{display: 'flex', gap: '10px', marginTop: 20}}>
+                  <button className="btn" onClick={salvar} style={{background: '#004E4B', flex: 1, color: 'white', padding: 10, border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                    <Save size={18} style={{marginRight: 5}}/> SALVAR
                   </button>
-                  <button className="btn" onClick={cancelar} style={{background: '#d32f2f', flex: 1}}>
-                    <XCircle size={18} style={{marginBottom:-4, marginRight: 5}}/> CANCELAR
+                  <button className="btn" onClick={cancelar} style={{background: '#d32f2f', flex: 1, color: 'white', padding: 10, border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                    <XCircle size={18} style={{marginRight: 5}}/> CANCELAR
                   </button>
                 </div>
 
@@ -307,10 +336,10 @@ export default function Dashboard() {
           </div>
 
           {/* Direita: Lista com Paginação */}
-          <div className="card" style={{flex: 2, display:'flex', flexDirection:'column', justifyContent:'space-between', minHeight: '400px'}}>
+          <div className="card" style={{flex: 2, display:'flex', flexDirection:'column', justifyContent:'space-between', minHeight: '400px', background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)'}}>
             <div>
               
-              {/* BOTÃO MEU DESEMPENHO */}
+              {/* HEADER DA LISTA */}
               <div style={{
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -319,31 +348,9 @@ export default function Dashboard() {
                 paddingBottom: 15, 
                 marginBottom: 15
               }}>
-                <h3 style={{margin: 0, display: 'flex', alignItems: 'center', gap: 10}}> 
+                <h3 style={{margin: 0, display: 'flex', alignItems: 'center', gap: 10, color: '#444'}}> 
                   <Clock size={20} color="#00995D"/> Histórico de Hoje 
                 </h3>
-                
-                <button 
-                  onClick={() => navigate('/meu-desempenho')} 
-                  style={{
-                    background: 'white', 
-                    border: '1px solid #00995D', 
-                    color: '#00995D', 
-                    padding: '6px 12px', 
-                    borderRadius: '6px', 
-                    fontSize: '12px', 
-                    fontWeight: 'bold', 
-                    cursor: 'pointer',
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 6,
-                    transition: '0.2s'
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#00995D'; e.currentTarget.style.color = 'white'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#00995D'; }}
-                >
-                  <BarChart2 size={14}/> MEU DESEMPENHO
-                </button>
               </div>
               
               {/* LISTA DE ITENS */}
@@ -352,15 +359,12 @@ export default function Dashboard() {
                   <div key={i} style={{padding: '15px', background: '#fff', border: '1px solid #eee', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 15, transition: '0.2s'}}>
                     <CheckCircle color="#00995D" size={24} />
                     <div style={{flex: 1}}>
-                      <div style={{fontWeight: 'bold', fontSize: 16, color: '#333'}}>{item.descricao}</div>
-                      <div style={{color: '#777', fontSize: 13, marginTop: 4, display: 'flex', gap: 10}}>
+                      <div style={{fontWeight: 'bold', fontSize: 15, color: '#333'}}>{item.descricao}</div>
+                      <div style={{color: '#777', fontSize: 13, marginTop: 4, display: 'flex', gap: 10, alignItems: 'center'}}>
                         <span style={{background: '#E8F5E9', color: '#2E7D32', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 'bold'}}>{item.categoria}</span>
-                        <span>Tempo: {item.tempo}</span>
-                        <span>{item.data_registro && item.data_registro.split(' ')[1]}</span>
+                        <span style={{display: 'flex', alignItems: 'center', gap: 4}}><Timer size={12}/> {item.tempo}</span>
+                        <span style={{display: 'flex', alignItems: 'center', gap: 4}}><Calendar size={12}/> {item.data_registro && item.data_registro.split(' ')[1]}</span>
                       </div>
-                    </div>
-                    <div style={{fontSize: 12, color: '#999'}}>
-                      Por: {item.usuario}
                     </div>
                   </div>
                 ))}
