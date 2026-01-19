@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, AlertCircle } from 'lucide-react'; // Importei o ícone de alerta
+import API_URL from './api';
 
 export default function Login() {
   const [user, setUser] = useState('');
@@ -21,10 +22,10 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/login', {
+      const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user, password: pass }),
+        body: JSON.stringify({ username: usuario, password: senha })
       });
 
       const data = await res.json(); 
