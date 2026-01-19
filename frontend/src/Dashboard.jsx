@@ -133,19 +133,24 @@ export default function Dashboard() {
         <div style={{display: 'flex', alignItems: 'center', gap: '25px'}}>
           
           <nav style={{display: 'flex', gap: '15px'}}>
+  
+            {/* BOTÃO ATENDIMENTOS (Todos veem) */}
             <Link to="/app" style={{...linkStyle, background: 'rgba(255, 255, 255, 0.3)'}}>
               <ListChecks size={18}/> ATENDIMENTOS
             </Link>
 
+            {/* --- BLOCO RESTRITO AO GESTOR --- */}
             {isAdmin && (
-              <Link to="/admin" style={linkStyle}>
-                <LayoutDashboard size={18}/> PAINEL
-              </Link>
-            )}
+              <>
+                <Link to="/admin" style={linkStyle}>
+                  <LayoutDashboard size={18}/> PAINEL
+                </Link>
 
-            <Link to="/usuarios" style={linkStyle}>
-              <Users size={18}/> USUÁRIOS
-            </Link>
+                <Link to="/usuarios" style={linkStyle}>
+                  <Users size={18}/> USUÁRIOS
+                </Link>
+              </>
+            )}
 
           </nav>
 
