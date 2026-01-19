@@ -196,7 +196,7 @@ export default function UserManagement() {
           
           <div style={{marginBottom: 15}}>
             <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block', marginBottom: 5}}>NOME DE USUÁRIO</label>
-            <input className={inputClass} value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: gustavo.silva" />
+            <input className={inputClass} value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: NOME" />
           </div>
           
           {/* SENHA */}
@@ -277,4 +277,5 @@ export default function UserManagement() {
       </div>
     </div>
   );
+
 }
