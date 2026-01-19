@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Square, Save, Clock, CheckCircle, LogOut, Calendar, FileText, Timer, Headset, AlertCircle, XCircle, ChevronLeft, ChevronRight, LayoutDashboard, ListChecks, BarChart2, Users } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import API_URL from './api';
+import API_URL from './api'; // <--- CONEXÃO COM O BACKEND
 
 export default function Dashboard() {
   const [timer, setTimer] = useState(0);
@@ -43,11 +43,10 @@ export default function Dashboard() {
       if (res.ok) {
         const todosDados = await res.json();
         
-        // 1. PEGA A DATA DE HOJE FORMATADA (dd/mm/aaaa)
+        // 1. PEGA A DATA DE HOJE FORMATADA
         const hoje = new Date().toLocaleDateString('pt-BR');
 
         // 2. FILTRA: DATA DE HOJE + USUÁRIO LOGADO
-        // O Backend salva como "dd/mm/aaaa HH:MM"
         const dadosFiltrados = todosDados.filter(item => 
           item.data_registro && 
           item.data_registro.startsWith(hoje) && 
@@ -67,7 +66,6 @@ export default function Dashboard() {
   const calcularTempoTotal = () => {
     let totalSegundos = 0;
     lista.forEach(item => {
-      // O banco pode retornar null se for antigo, garante que string existe
       if (item.tempo) {
         const [h, m, s] = item.tempo.split(':').map(Number);
         totalSegundos += (h * 3600) + (m * 60) + s;
@@ -117,7 +115,6 @@ export default function Dashboard() {
   };
 
   // --- LÓGICA DE PAGINAÇÃO ---
-  // Slice().reverse() cria uma cópia invertida para mostrar o mais recente primeiro
   const listaInvertida = lista.slice().reverse();
   const indexUltimo = paginaAtual * itensPorPagina;
   const indexPrimeiro = indexUltimo - itensPorPagina;
@@ -157,12 +154,10 @@ export default function Dashboard() {
           
           <nav style={{display: 'flex', gap: '15px'}}>
   
-            {/* BOTÃO ATENDIMENTOS (Todos veem) */}
             <Link to="/app" style={{...linkStyle, background: 'rgba(255, 255, 255, 0.3)'}}>
               <ListChecks size={18}/> ATENDIMENTOS
             </Link>
 
-            {/* --- BLOCO RESTRITO AO GESTOR --- */}
             {isAdmin && (
               <>
                 <Link to="/admin" style={linkStyle}>
@@ -339,7 +334,7 @@ export default function Dashboard() {
           <div className="card" style={{flex: 2, display:'flex', flexDirection:'column', justifyContent:'space-between', minHeight: '400px', background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)'}}>
             <div>
               
-              {/* HEADER DA LISTA */}
+              {/* HEADER DA LISTA COM O BOTÃO DE VOLTA */}
               <div style={{
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -351,6 +346,29 @@ export default function Dashboard() {
                 <h3 style={{margin: 0, display: 'flex', alignItems: 'center', gap: 10, color: '#444'}}> 
                   <Clock size={20} color="#00995D"/> Histórico de Hoje 
                 </h3>
+
+                {/* BOTÃO MEU DESEMPENHO RESTAURADO AQUI 👇 */}
+                <button 
+                  onClick={() => navigate('/meu-desempenho')} 
+                  style={{
+                    background: 'white', 
+                    border: '1px solid #00995D', 
+                    color: '#00995D', 
+                    padding: '6px 12px', 
+                    borderRadius: '6px', 
+                    fontSize: '12px', 
+                    fontWeight: 'bold', 
+                    cursor: 'pointer',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 6,
+                    transition: '0.2s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#00995D'; e.currentTarget.style.color = 'white'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#00995D'; }}
+                >
+                  <BarChart2 size={14}/> MEU DESEMPENHO
+                </button>
               </div>
               
               {/* LISTA DE ITENS */}
