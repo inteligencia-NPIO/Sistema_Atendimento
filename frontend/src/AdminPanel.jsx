@@ -247,7 +247,7 @@ export default function AdminPanel() {
 
           <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', background: 'white'}}>
             <div style={{background: '#e6fff3', padding: '15px', borderRadius: '12px'}}> <FileText size={32} color="#00995d" /> </div>
-            <div> <small style={{color: '#666', fontWeight: 'bold'}}>TOTAL FILTRADO</small> <div style={{fontSize: '28px', fontWeight: 'bold', color: '#333'}}>{listaFiltrada.length}</div> </div>
+            <div> <small style={{color: '#666', fontWeight: 'bold'}}>TOTAL ATENDIMENTOS</small> <div style={{fontSize: '28px', fontWeight: 'bold', color: '#333'}}>{listaFiltrada.length}</div> </div>
           </div>
 
           <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', background: 'white'}}>
@@ -365,4 +365,5 @@ export default function AdminPanel() {
       </div>
     </div>
   );
+
 }
