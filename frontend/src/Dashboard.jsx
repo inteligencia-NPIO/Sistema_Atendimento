@@ -204,10 +204,6 @@ export default function Dashboard() {
               <ListChecks size={18}/> ATENDIMENTOS
             </Link>
 
-            <Link to="/perfil" style={linkStyle}>
-              <User size={18}/> MEU PERFIL
-            </Link>
-
             {isAdmin && (
               <>
                 <Link to="/admin" style={linkStyle}>
@@ -219,6 +215,22 @@ export default function Dashboard() {
                 </Link>
               </>
             )}
+
+            <button 
+              onClick={() => navigate('/perfil')} 
+              style={{
+                background: 'rgba(255,255,255,0.2)', 
+                border: '1px solid rgba(255,255,255,0.4)', 
+                color: 'white', 
+                padding: '8px', 
+                borderRadius: '8px', 
+                cursor: 'pointer',
+                display: 'flex', 
+                alignItems: 'center',
+                marginRight: '5px'
+              }}
+              title="Meu Perfil"
+            ></button>
 
           </nav>
 
