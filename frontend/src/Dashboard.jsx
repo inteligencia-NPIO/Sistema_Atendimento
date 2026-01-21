@@ -179,6 +179,25 @@ export default function Dashboard() {
               </>
             )}
 
+              {/* --- ÍCONE DE PERFIL --- */}
+            <button 
+              onClick={() => navigate('/perfil')} 
+              style={{
+                background: 'rgba(255,255,255,0.2)', 
+                border: '1px solid rgba(255,255,255,0.4)', 
+                color: 'white', 
+                padding: '8px', 
+                borderRadius: '8px', 
+                cursor: 'pointer',
+                display: 'flex', 
+                alignItems: 'center',
+                marginRight: '5px'
+              }}
+              title="Meu Perfil"
+            >
+              <User size={18} />
+            </button>
+
           </nav>
 
           <div style={{width: 1, height: 30, background: 'rgba(255,255,255,0.3)'}}></div>
@@ -188,25 +207,6 @@ export default function Dashboard() {
             alt="Logo" 
             style={{maxWidth: '180px', maxHeight: '60px', objectFit: 'contain'}} 
           />
-
-          {/* --- ÍCONE DE PERFIL --- */}
-          <button 
-            onClick={() => navigate('/perfil')} 
-            style={{
-              background: 'rgba(255,255,255,0.2)', 
-              border: '1px solid rgba(255,255,255,0.4)', 
-              color: 'white', 
-              padding: '8px', 
-              borderRadius: '8px', 
-              cursor: 'pointer',
-              display: 'flex', 
-              alignItems: 'center',
-              marginRight: '5px'
-            }}
-            title="Meu Perfil"
-          >
-            <User size={18} />
-          </button>
           
           <button 
             onClick={() => {
@@ -475,5 +475,4 @@ export default function Dashboard() {
       </div>
     </div>
   );
-
 }
