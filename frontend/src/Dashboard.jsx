@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Play, Square, Save, Clock, CheckCircle, LogOut, Calendar, FileText, Timer, 
   Headset, AlertCircle, XCircle, ChevronLeft, ChevronRight, LayoutDashboard, 
-  ListChecks, BarChart2, Users, User, Trash2 // <--- ADICIONEI Trash2 AQUI
+  ListChecks, BarChart2, Users, User, Trash2, AlertTriangle
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import API_URL from './api'; // <--- CONEXÃO COM O BACKEND
@@ -31,6 +31,10 @@ export default function Dashboard() {
   const [cat, setCat] = useState('1 - LIBERAÇÃO');
   const [showForm, setShowForm] = useState(false);
   const [erro, setErro] = useState('');
+  
+  // Estados do Modal
+  const [modalAberto, setModalAberto] = useState(false);
+  const [itemParaExcluir, setItemParaExcluir] = useState(null);
   
   // Paginação
   const [paginaAtual, setPaginaAtual] = useState(1);
@@ -123,24 +127,30 @@ export default function Dashboard() {
     }
   };
 
-  // --- FUNÇÃO DE EXCLUIR (NOVA ADIÇÃO) ---
-  const handleExcluir = async (id) => {
-    // 1. Pergunta primeiro (Confirmação)
-    if (!window.confirm("Tem certeza que deseja excluir este atendimento?")) return;
+  // --- FUNÇÃO DE EXCLUIR (ABRE O MODAL) ---
+  const handleExcluir = (id) => {
+    setItemParaExcluir(id);
+    setModalAberto(true);
+  };
+
+  // --- CONFIRMAR EXCLUSÃO (EXECUTA DE VERDADE) ---
+  const confirmarExclusao = async () => {
+    if (!itemParaExcluir) return;
 
     try {
-      // 2. Chama a rota de deletar no backend
-      const res = await fetch(`${API_URL}/api/atendimentos/${id}`, {
+      const res = await fetch(`${API_URL}/api/atendimentos/${itemParaExcluir}`, {
         method: 'DELETE'
       });
 
       if (res.ok) {
-        carregarDados(); // Atualiza a lista se deu certo
+        carregarDados();           // Atualiza a lista
+        setModalAberto(false);     // Fecha o modal
+        setItemParaExcluir(null);  // Limpa a seleção
       } else {
-        alert("Erro ao excluir. Tente novamente.");
+        alert("Erro ao excluir no servidor.");
       }
     } catch (error) {
-      console.error("Erro ao excluir:", error);
+      alert("Erro de conexão.");
     }
   };
 
@@ -168,7 +178,7 @@ export default function Dashboard() {
   if (!usuario) return null;
 
   return (
-    <div style={{minHeight: '100vh', background: '#F4F6F9', fontFamily: 'Segoe UI, sans-serif'}}>
+    <div style={{minHeight: '100vh', background: '#F4F6F9', fontFamily: 'Segoe UI, sans-serif', position: 'relative'}}>
       
       {/* HEADER */}
       <div style={{
@@ -194,6 +204,10 @@ export default function Dashboard() {
               <ListChecks size={18}/> ATENDIMENTOS
             </Link>
 
+            <Link to="/perfil" style={linkStyle}>
+              <User size={18}/> MEU PERFIL
+            </Link>
+
             {isAdmin && (
               <>
                 <Link to="/admin" style={linkStyle}>
@@ -205,25 +219,6 @@ export default function Dashboard() {
                 </Link>
               </>
             )}
-
-            {/* --- ÍCONE DE PERFIL (MANTIDO) --- */}
-            <button 
-              onClick={() => navigate('/perfil')} 
-              style={{
-                background: 'rgba(255,255,255,0.2)', 
-                border: '1px solid rgba(255,255,255,0.4)', 
-                color: 'white', 
-                padding: '8px', 
-                borderRadius: '8px', 
-                cursor: 'pointer',
-                display: 'flex', 
-                alignItems: 'center',
-                marginRight: '5px'
-              }}
-              title="Meu Perfil"
-            >
-              <User size={18} />
-            </button>
 
           </nav>
 
@@ -402,7 +397,7 @@ export default function Dashboard() {
                   <Clock size={20} color="#00995D"/> Histórico de Hoje 
                 </h3>
 
-                {/* BOTÃO MEU DESEMPENHO (MANTIDO) */}
+                {/* BOTÃO MEU DESEMPENHO */}
                 <button 
                   onClick={() => navigate('/meu-desempenho')} 
                   style={{
@@ -448,7 +443,7 @@ export default function Dashboard() {
                       style={{
                         background: 'transparent', border: 'none', cursor: 'pointer', color: '#d32f2f',
                         padding: '8px', borderRadius: '50%', transition: '0.2s', 
-                        marginLeft: 'auto' // <--- A MÁGICA PARA FICAR NA DIREITA
+                        marginLeft: 'auto'
                       }}
                       title="Excluir"
                       onMouseEnter={(e) => e.currentTarget.style.background = '#ffebee'}
@@ -518,6 +513,53 @@ export default function Dashboard() {
 
         </div>
       </div>
+
+      {/* --- MODAL DE CONFIRMAÇÃO (ADICIONADO AQUI) --- */}
+      {modalAberto && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
+          background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '12px', width: '90%', maxWidth: '400px', 
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)', textAlign: 'center', animation: 'fadeIn 0.2s'
+          }}>
+            <div style={{marginBottom: 15, display: 'flex', justifyContent: 'center'}}>
+              <div style={{background: '#ffebee', padding: 15, borderRadius: '50%'}}>
+                <AlertTriangle size={32} color="#d32f2f" />
+              </div>
+            </div>
+            
+            <h3 style={{margin: '0 0 10px 0', color: '#333'}}>Excluir Atendimento?</h3>
+            <p style={{color: '#666', fontSize: '14px', marginBottom: '25px', lineHeight: '1.5'}}>
+              Você tem certeza que deseja remover este registro?<br/>
+              <b>Essa ação não pode ser desfeita.</b>
+            </p>
+
+            <div style={{display: 'flex', gap: 10}}>
+              <button 
+                onClick={() => setModalAberto(false)}
+                style={{
+                  flex: 1, padding: '12px', background: 'white', border: '1px solid #ddd', 
+                  color: '#555', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmarExclusao}
+                style={{
+                  flex: 1, padding: '12px', background: '#d32f2f', border: 'none', 
+                  color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                Sim, Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
