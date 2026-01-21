@@ -85,7 +85,14 @@ class UsuarioResponse(BaseModel):
         orm_mode = True
 
 # ==========================================
-# 5. APP E ROTAS
+# 5. SENHAS
+# ==========================================
+class TrocarSenhaData(BaseModel):
+    username: str
+    senha_atual: str
+    nova_senha: str
+# ==========================================
+# 6. APP E ROTAS
 # ==========================================
 
 app = FastAPI(
@@ -173,3 +180,21 @@ def deletar_usuario(user_id: int, db: Session = Depends(get_db)):
     db.delete(user)
     db.commit()
     return {"msg": "Deletado"}
+
+@app.put("/api/minha-senha")
+def trocar_senha(data: TrocarSenhaData, db: Session = Depends(get_db)):
+    # 1. Busca o usuário
+    usuario = db.query(UsuarioDB).filter(UsuarioDB.nome == data.username).first()
+    
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    # 2. Verifica se a senha atual está certa (Segurança básica)
+    if usuario.senha != data.senha_atual:
+        raise HTTPException(status_code=400, detail="A senha atual está incorreta!")
+    
+    # 3. Salva a nova senha
+    usuario.senha = data.nova_senha
+    db.commit()
+    
+    return {"msg": "Senha alterada com sucesso!"}
