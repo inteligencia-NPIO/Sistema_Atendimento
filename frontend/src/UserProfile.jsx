@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Save, ArrowLeft, Shield } from 'lucide-react';
+import { User, Lock, Save, ArrowLeft, Shield, CheckCircle } from 'lucide-react';
 import API_URL from './api';
 
 export default function UserProfile() {
@@ -9,6 +9,8 @@ export default function UserProfile() {
 
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState(''); // <--- NOVO ESTADO
+  
   const [msg, setMsg] = useState('');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,8 +20,15 @@ export default function UserProfile() {
   }, [usuario, navigate]);
 
   const handleSalvar = async () => {
-    if (!senhaAtual || !novaSenha) {
+    // 1. Valida se tudo está preenchido
+    if (!senhaAtual || !novaSenha || !confirmarSenha) {
       setErro("Preencha todos os campos.");
+      return;
+    }
+
+    // 2. Valida se as senhas batem (NOVA REGRA)
+    if (novaSenha !== confirmarSenha) {
+      setErro("A confirmação de senha não confere!");
       return;
     }
 
@@ -44,6 +53,7 @@ export default function UserProfile() {
         setMsg("Senha alterada com sucesso!");
         setSenhaAtual('');
         setNovaSenha('');
+        setConfirmarSenha(''); // Limpa o campo de confirmação também
       } else {
         setErro(data.detail || "Erro ao alterar senha.");
       }
@@ -57,7 +67,7 @@ export default function UserProfile() {
   return (
     <div style={{minHeight: '100vh', background: '#F4F6F9', fontFamily: 'Segoe UI, sans-serif'}}>
       
-      {/* HEADER SIMPLES */}
+      {/* HEADER */}
       <div style={{background: 'linear-gradient(135deg, #B1D14B 0%, #004E4B 100%)', padding: '30px 40px', color: 'white', display: 'flex', alignItems: 'center', gap: 20, boxShadow: '0 4px 10px rgba(0,0,0,0.1)'}}>
         <button onClick={() => navigate('/app')} style={{background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '10px', borderRadius: '50%', cursor: 'pointer', display: 'flex'}}>
           <ArrowLeft size={20}/>
@@ -82,9 +92,10 @@ export default function UserProfile() {
               <Shield size={20}/> Alterar Senha
             </h3>
 
-            {msg && <div style={{background: '#e6fff3', color: '#00995D', padding: 10, borderRadius: 8, marginBottom: 15, fontSize: 14, textAlign: 'center'}}>{msg}</div>}
-            {erro && <div style={{background: '#ffebe6', color: '#d32f2f', padding: 10, borderRadius: 8, marginBottom: 15, fontSize: 14, textAlign: 'center'}}>{erro}</div>}
+            {msg && <div style={{background: '#e6fff3', color: '#00995D', padding: 10, borderRadius: 8, marginBottom: 15, fontSize: 14, textAlign: 'center', border: '1px solid #bcebc9'}}>{msg}</div>}
+            {erro && <div style={{background: '#ffebe6', color: '#d32f2f', padding: 10, borderRadius: 8, marginBottom: 15, fontSize: 14, textAlign: 'center', border: '1px solid #ffbdad'}}>{erro}</div>}
 
+            {/* SENHA ATUAL */}
             <div style={{marginBottom: 15}}>
               <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 5, display: 'block'}}>SENHA ATUAL</label>
               <div style={{position: 'relative'}}>
@@ -99,7 +110,8 @@ export default function UserProfile() {
               </div>
             </div>
 
-            <div style={{marginBottom: 25}}>
+            {/* NOVA SENHA */}
+            <div style={{marginBottom: 15}}>
               <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 5, display: 'block'}}>NOVA SENHA</label>
               <div style={{position: 'relative'}}>
                 <Lock size={18} color="#00995D" style={{position: 'absolute', left: 12, top: 12}}/>
@@ -108,6 +120,21 @@ export default function UserProfile() {
                   value={novaSenha}
                   onChange={e => setNovaSenha(e.target.value)}
                   placeholder="Crie uma nova senha"
+                  style={{width: '100%', padding: '10px 10px 10px 40px', border: '1px solid #00995D', borderRadius: 8, boxSizing: 'border-box', outline: 'none'}}
+                />
+              </div>
+            </div>
+
+            {/* CONFIRMAR NOVA SENHA (NOVO CAMPO) */}
+            <div style={{marginBottom: 25}}>
+              <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 5, display: 'block'}}>CONFIRMAR NOVA SENHA</label>
+              <div style={{position: 'relative'}}>
+                <CheckCircle size={18} color="#00995D" style={{position: 'absolute', left: 12, top: 12}}/>
+                <input 
+                  type="password" 
+                  value={confirmarSenha}
+                  onChange={e => setConfirmarSenha(e.target.value)}
+                  placeholder="Repita a nova senha"
                   style={{width: '100%', padding: '10px 10px 10px 40px', border: '1px solid #00995D', borderRadius: 8, boxSizing: 'border-box', outline: 'none'}}
                 />
               </div>
