@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ListChecks, LogOut, Users, UserPlus, 
   Trash2, ShieldCheck, User, ChevronDown, Eye, EyeOff 
 } from 'lucide-react';
-import API_URL from './api'; // <--- IMPORTANTE: Conexão com o Backend
+import API_URL from './api'; 
 
 // --- COMPONENTE DROPDOWN CUSTOMIZADO ---
 const CustomDropdown = ({ value, onChange }) => {
@@ -179,6 +179,24 @@ export default function UserManagement() {
             <Link to="/app" style={linkStyle}><ListChecks size={18}/> ATENDIMENTOS</Link>
             <Link to="/admin" style={linkStyle}><LayoutDashboard size={18}/> PAINEL</Link>
             <Link to="/usuarios" style={{...linkStyle, background: 'rgba(255,255,255,0.3)'}}><Users size={18}/> USUÁRIOS</Link>
+             {/* --- ÍCONE DE PERFIL --- */}
+            <button 
+              onClick={() => navigate('/perfil')} 
+              style={{
+                background: 'rgba(255,255,255,0.2)', 
+                border: '1px solid rgba(255,255,255,0.4)', 
+                color: 'white', 
+                padding: '8px', 
+                borderRadius: '8px', 
+                cursor: 'pointer',
+                display: 'flex', 
+                alignItems: 'center',
+                marginRight: '5px'
+              }}
+              title="Meu Perfil"
+            >
+              <User size={18} />
+            </button>
           </nav>
           <div style={{width:1, height:30, background:'rgba(255,255,255,0.3)'}}></div>
           <img src="/logo.png" style={{maxWidth:180, maxHeight:60}} alt="Logo" />
@@ -196,7 +214,7 @@ export default function UserManagement() {
           
           <div style={{marginBottom: 15}}>
             <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block', marginBottom: 5}}>NOME DE USUÁRIO</label>
-            <input className={inputClass} value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: NOME" />
+            <input className={inputClass} value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: gustavo.silva" />
           </div>
           
           {/* SENHA */}
@@ -277,5 +295,4 @@ export default function UserManagement() {
       </div>
     </div>
   );
-
 }

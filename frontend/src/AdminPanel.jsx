@@ -217,6 +217,24 @@ export default function AdminPanel() {
             <Link to="/app" style={linkStyle}><ListChecks size={18}/> ATENDIMENTOS</Link>
             <Link to="/admin" style={{...linkStyle, background: 'rgba(255,255,255,0.3)'}}><LayoutDashboard size={18}/> PAINEL</Link>
             <Link to="/usuarios" style={linkStyle}><Users size={18}/> USUÁRIOS</Link>
+             {/* --- ÍCONE DE PERFIL --- */}
+            <button 
+              onClick={() => navigate('/perfil')} 
+              style={{
+                background: 'rgba(255,255,255,0.2)', 
+                border: '1px solid rgba(255,255,255,0.4)', 
+                color: 'white', 
+                padding: '8px', 
+                borderRadius: '8px', 
+                cursor: 'pointer',
+                display: 'flex', 
+                alignItems: 'center',
+                marginRight: '5px'
+              }}
+              title="Meu Perfil"
+            >
+              <User size={18} />
+            </button>
           </nav>
           <div style={{width: 1, height: 30, background: 'rgba(255,255,255,0.3)'}}></div>
           <img src="/logo.png" alt="Logo" style={{maxWidth: '180px', maxHeight: '60px', objectFit: 'contain'}} />
@@ -247,7 +265,7 @@ export default function AdminPanel() {
 
           <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', background: 'white'}}>
             <div style={{background: '#e6fff3', padding: '15px', borderRadius: '12px'}}> <FileText size={32} color="#00995d" /> </div>
-            <div> <small style={{color: '#666', fontWeight: 'bold'}}>TOTAL ATENDIMENTOS</small> <div style={{fontSize: '28px', fontWeight: 'bold', color: '#333'}}>{listaFiltrada.length}</div> </div>
+            <div> <small style={{color: '#666', fontWeight: 'bold'}}>TOTAL FILTRADO</small> <div style={{fontSize: '28px', fontWeight: 'bold', color: '#333'}}>{listaFiltrada.length}</div> </div>
           </div>
 
           <div className="card" style={{flex: 1, display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', background: 'white'}}>
@@ -365,5 +383,4 @@ export default function AdminPanel() {
       </div>
     </div>
   );
-
 }
