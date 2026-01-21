@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Square, Save, Clock, CheckCircle, LogOut, Calendar, FileText, Timer, Headset, AlertCircle, XCircle, ChevronLeft, ChevronRight, LayoutDashboard, ListChecks, BarChart2, Users } from 'lucide-react';
+import { Play, Square, Save, Clock, CheckCircle, LogOut, Calendar, FileText, Timer, Headset, AlertCircle, XCircle, ChevronLeft, ChevronRight, LayoutDashboard, ListChecks, BarChart2, Users, User } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import API_URL from './api'; // <--- CONEXÃO COM O BACKEND
 
@@ -475,4 +475,5 @@ export default function Dashboard() {
       </div>
     </div>
   );
+
 }
