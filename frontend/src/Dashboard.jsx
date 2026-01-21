@@ -1,22 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Play, Square, Save, Clock, CheckCircle, LogOut, Calendar, FileText, Timer, Headset, AlertCircle, XCircle, ChevronLeft, ChevronRight, LayoutDashboard, ListChecks, BarChart2, Users, User } from 'lucide-react';
+import { 
+  Play, Square, Save, Clock, CheckCircle, LogOut, Calendar, FileText, Timer, 
+  Headset, AlertCircle, XCircle, ChevronLeft, ChevronRight, LayoutDashboard, 
+  ListChecks, BarChart2, Users, User, Trash2 // <--- ADICIONEI Trash2 AQUI
+} from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import API_URL from './api'; // <--- CONEXÃO COM O BACKEND
 
 export default function Dashboard() {
-  const [timer, setTimer] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [lista, setLista] = useState([]);
-  const [desc, setDesc] = useState('');
-  const [cat, setCat] = useState('1 - LIBERAÇÃO');
-  const [showForm, setShowForm] = useState(false);
-  
-  const [erro, setErro] = useState('');
-  
-  // --- PAGINAÇÃO ---
-  const [paginaAtual, setPaginaAtual] = useState(1);
-  const itensPorPagina = 10;
-
   const navigate = useNavigate();
   
   const usuario = localStorage.getItem('usuario');
@@ -32,6 +23,19 @@ export default function Dashboard() {
   // Verifica se o cargo é 'gestor'
   const isAdmin = tipoUsuario === 'gestor';
 
+  // Estados
+  const [timer, setTimer] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [lista, setLista] = useState([]);
+  const [desc, setDesc] = useState('');
+  const [cat, setCat] = useState('1 - LIBERAÇÃO');
+  const [showForm, setShowForm] = useState(false);
+  const [erro, setErro] = useState('');
+  
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 10;
+
   // --- LÓGICA DO TIMER ---
   useEffect(() => {
     let interval = null;
@@ -41,7 +45,9 @@ export default function Dashboard() {
   }, [isRunning]);
 
   // --- CARREGAR DADOS DO BANCO ---
-  useEffect(() => { carregarDados(); }, [usuario]);
+  useEffect(() => { 
+    if(usuario) carregarDados(); 
+  }, [usuario]);
 
   const carregarDados = async () => {
     try {
@@ -117,6 +123,27 @@ export default function Dashboard() {
     }
   };
 
+  // --- FUNÇÃO DE EXCLUIR (NOVA ADIÇÃO) ---
+  const handleExcluir = async (id) => {
+    // 1. Pergunta primeiro (Confirmação)
+    if (!window.confirm("Tem certeza que deseja excluir este atendimento?")) return;
+
+    try {
+      // 2. Chama a rota de deletar no backend
+      const res = await fetch(`${API_URL}/api/atendimentos/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        carregarDados(); // Atualiza a lista se deu certo
+      } else {
+        alert("Erro ao excluir. Tente novamente.");
+      }
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+    }
+  };
+
   const cancelar = () => {
     setTimer(0); setDesc(''); setErro(''); setShowForm(false);
   };
@@ -179,7 +206,7 @@ export default function Dashboard() {
               </>
             )}
 
-              {/* --- ÍCONE DE PERFIL --- */}
+            {/* --- ÍCONE DE PERFIL (MANTIDO) --- */}
             <button 
               onClick={() => navigate('/perfil')} 
               style={{
@@ -362,7 +389,7 @@ export default function Dashboard() {
           <div className="card" style={{flex: 2, display:'flex', flexDirection:'column', justifyContent:'space-between', minHeight: '400px', background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)'}}>
             <div>
               
-              {/* HEADER DA LISTA COM O BOTÃO DE VOLTA */}
+              {/* HEADER DA LISTA */}
               <div style={{
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -375,7 +402,7 @@ export default function Dashboard() {
                   <Clock size={20} color="#00995D"/> Histórico de Hoje 
                 </h3>
 
-                {/* BOTÃO MEU DESEMPENHO RESTAURADO AQUI 👇 */}
+                {/* BOTÃO MEU DESEMPENHO (MANTIDO) */}
                 <button 
                   onClick={() => navigate('/meu-desempenho')} 
                   style={{
@@ -399,11 +426,13 @@ export default function Dashboard() {
                 </button>
               </div>
               
-              {/* LISTA DE ITENS */}
+              {/* LISTA DE ITENS COM A LIXEIRA À DIREITA */}
               <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
                 {itensAtuais.map((item, i) => (
-                  <div key={i} style={{padding: '15px', background: '#fff', border: '1px solid #eee', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 15, transition: '0.2s'}}>
+                  <div key={item.id || i} style={{padding: '15px', background: '#fff', border: '1px solid #eee', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 15, transition: '0.2s'}}>
                     <CheckCircle color="#00995D" size={24} />
+                    
+                    {/* TEXTO DO ITEM (Flex 1 empurra a lixeira pra direita) */}
                     <div style={{flex: 1}}>
                       <div style={{fontWeight: 'bold', fontSize: 15, color: '#333'}}>{item.descricao}</div>
                       <div style={{color: '#777', fontSize: 13, marginTop: 4, display: 'flex', gap: 10, alignItems: 'center'}}>
@@ -412,6 +441,22 @@ export default function Dashboard() {
                         <span style={{display: 'flex', alignItems: 'center', gap: 4}}><Calendar size={12}/> {item.data_registro && item.data_registro.split(' ')[1]}</span>
                       </div>
                     </div>
+                    
+                    {/* BOTÃO EXCLUIR */}
+                    <button 
+                      onClick={() => handleExcluir(item.id)}
+                      style={{
+                        background: 'transparent', border: 'none', cursor: 'pointer', color: '#d32f2f',
+                        padding: '8px', borderRadius: '50%', transition: '0.2s', 
+                        marginLeft: 'auto' // <--- A MÁGICA PARA FICAR NA DIREITA
+                      }}
+                      title="Excluir"
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#ffebee'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+
                   </div>
                 ))}
                 
