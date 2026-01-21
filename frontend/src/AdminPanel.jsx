@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ListChecks, LogOut, Filter, Calendar, 
-  FileText, Clock, Users, ChevronDown, Layers 
+  FileText, Clock, Users, ChevronDown, Layers, User
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -383,4 +383,5 @@ export default function AdminPanel() {
       </div>
     </div>
   );
+
 }
