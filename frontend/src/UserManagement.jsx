@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ListChecks, LogOut, Users, UserPlus, 
-  Trash2, ShieldCheck, User, ChevronDown, Eye, EyeOff 
+  Trash2, ShieldCheck, User, ChevronDown, Eye, EyeOff, AlertTriangle // <--- ADICIONEI AlertTriangle
 } from 'lucide-react';
 import API_URL from './api'; 
 
@@ -91,6 +91,10 @@ export default function UserManagement() {
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Estados do Modal de Exclusão (NOVO)
+  const [modalAberto, setModalAberto] = useState(false);
+  const [idParaExcluir, setIdParaExcluir] = useState(null);
+
   // Carrega usuários ao iniciar
   useEffect(() => {
     // Proteção de Rota: Só gestor acessa
@@ -104,7 +108,7 @@ export default function UserManagement() {
 
   const carregarUsuarios = async () => {
     try {
-      // <--- CONECTADO NO BANCO REAL AGORA
+      // <--- CONECTADO NO BANCO REAL
       const res = await fetch(`${API_URL}/api/usuarios`);
       if (res.ok) {
         const data = await res.json();
@@ -149,14 +153,23 @@ export default function UserManagement() {
     }
   };
 
-  const handleExcluir = async (id) => {
-    if(!window.confirm("Tem certeza que deseja excluir este usuário?")) return;
+  // --- FUNÇÃO 1: ABRE O MODAL ---
+  const handleExcluir = (id) => {
+    setIdParaExcluir(id);
+    setModalAberto(true);
+  };
+
+  // --- FUNÇÃO 2: EXECUTA A EXCLUSÃO ---
+  const confirmarExclusao = async () => {
+    if (!idParaExcluir) return;
     
     try {
       // <--- DELETA DO BANCO REAL
-      const res = await fetch(`${API_URL}/api/usuarios/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_URL}/api/usuarios/${idParaExcluir}`, { method: 'DELETE' });
       if (res.ok) {
         carregarUsuarios();
+        setModalAberto(false);
+        setIdParaExcluir(null);
       } else {
         alert("Erro ao excluir usuário.");
       }
@@ -169,7 +182,7 @@ export default function UserManagement() {
   const inputClass = "input-filter"; 
 
   return (
-    <div style={{minHeight: '100vh', background: '#F4F6F9', fontFamily: 'Segoe UI, sans-serif'}}>
+    <div style={{minHeight: '100vh', background: '#F4F6F9', fontFamily: 'Segoe UI, sans-serif', position: 'relative'}}>
       
       {/* HEADER */}
       <div style={{background: 'linear-gradient(135deg, #B1D14B 0%, #004E4B 100%)', padding: '30px 40px 80px 40px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.1)'}}>
@@ -214,7 +227,7 @@ export default function UserManagement() {
           
           <div style={{marginBottom: 15}}>
             <label style={{fontSize: 12, fontWeight: 'bold', color: '#666', display: 'block', marginBottom: 5}}>NOME DE USUÁRIO</label>
-            <input className={inputClass} value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: gustavo.silva" />
+            <input className={inputClass} value={nome} onChange={e => setNome(e.target.value)} placeholder="NOME" />
           </div>
           
           {/* SENHA */}
@@ -283,7 +296,6 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td style={{padding: 12, textAlign: 'right'}}>
-                    {/* Impede que o admin se exclua ou exclua o admin principal se quiser colocar essa regra depois */}
                     <button onClick={() => handleExcluir(u.id)} style={{background: 'transparent', border: 'none', cursor: 'pointer'}} title="Excluir"><Trash2 size={18} color="#d32f2f"/></button>
                   </td>
                 </tr>
@@ -293,6 +305,53 @@ export default function UserManagement() {
           </table>
         </div>
       </div>
+
+      {/* --- MODAL DE CONFIRMAÇÃO (CUSTOMIZADO) --- */}
+      {modalAberto && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
+          background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '12px', width: '90%', maxWidth: '400px', 
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)', textAlign: 'center', animation: 'fadeIn 0.2s'
+          }}>
+            <div style={{marginBottom: 15, display: 'flex', justifyContent: 'center'}}>
+              <div style={{background: '#ffebee', padding: 15, borderRadius: '50%'}}>
+                <AlertTriangle size={32} color="#d32f2f" />
+              </div>
+            </div>
+            
+            <h3 style={{margin: '0 0 10px 0', color: '#333'}}>Excluir Usuário?</h3>
+            <p style={{color: '#666', fontSize: '14px', marginBottom: '25px', lineHeight: '1.5'}}>
+              Você tem certeza que deseja remover este acesso?<br/>
+              <b>Essa ação não pode ser desfeita.</b>
+            </p>
+
+            <div style={{display: 'flex', gap: 10}}>
+              <button 
+                onClick={() => setModalAberto(false)}
+                style={{
+                  flex: 1, padding: '12px', background: 'white', border: '1px solid #ddd', 
+                  color: '#555', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmarExclusao}
+                style={{
+                  flex: 1, padding: '12px', background: '#d32f2f', border: 'none', 
+                  color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                Sim, Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
