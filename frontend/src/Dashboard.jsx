@@ -216,7 +216,7 @@ export default function Dashboard() {
               </>
             )}
 
-            <button 
+                  <button 
               onClick={() => navigate('/perfil')} 
               style={{
                 background: 'rgba(255,255,255,0.2)', 
@@ -230,7 +230,9 @@ export default function Dashboard() {
                 marginRight: '5px'
               }}
               title="Meu Perfil"
-            ></button>
+            >
+              <User size={18} />
+            </button>
 
           </nav>
 
