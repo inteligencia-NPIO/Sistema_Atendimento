@@ -198,3 +198,14 @@ def trocar_senha(data: TrocarSenhaData, db: Session = Depends(get_db)):
     db.commit()
     
     return {"msg": "Senha alterada com sucesso!"}
+
+# --- ROTA NOVA: DELETAR ATENDIMENTO ---
+@app.delete("/api/atendimentos/{id}")
+def deletar_atendimento(id: int, db: Session = Depends(get_db)):
+    item = db.query(AtendimentoDB).filter(AtendimentoDB.id == id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Atendimento não encontrado")
+    
+    db.delete(item)
+    db.commit()
+    return {"msg": "Deletado com sucesso"}
