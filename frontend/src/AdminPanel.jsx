@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ListChecks, LogOut, Filter, Calendar, 
-  FileText, Clock, Users, ChevronDown, Layers, User
+  FileText, Clock, Users, ChevronDown, Layers, User 
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -313,7 +313,7 @@ export default function AdminPanel() {
               <BarChart data={dadosPorUsuario} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis dataKey="nome" type="category" width={80} />
+                <YAxis dataKey="nome" type="category" width={80} tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="qtd" name="Atendimentos" fill="#B1D14B" radius={[0, 4, 4, 0]} />
@@ -383,5 +383,4 @@ export default function AdminPanel() {
       </div>
     </div>
   );
-
 }
